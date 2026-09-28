@@ -47,7 +47,7 @@ test('a stale but renewable sign-in: one locked-down CLI launch, and the same ca
  assert.equal(result.status,'ok');assert.equal(result.windows[0].usedPercent,23);
  assert.equal(b.launches.length,1);assert.deepEqual(b.fetches,['Bearer fake-renewed-access'],'the stale pass is never sent; the renewed one is read from the file');
  const {command,args,options,child}=b.launches[0];
- assert.equal(command,'C:\\fake\\claude.exe');assert.deepEqual(args,b.signin.renewalArgs('sonnet'));
+ assert.equal(command,'C:\\fake\\claude.exe');assert.deepEqual(args,b.signin.renewalArgs('haiku'));
  for(const flag of ['--print','--no-session-persistence','--tools','--strict-mcp-config','--setting-sources','--safe-mode','--disable-slash-commands'])assert.ok(args.includes(flag),flag);
  assert.equal(args[args.indexOf('--tools')+1],'');assert.equal(args[args.indexOf('--setting-sources')+1],'');assert.equal(args[args.indexOf('--mcp-config')+1],'{"mcpServers":{}}');
  assert.equal(child.prompt,'OK?');assert.doesNotMatch(JSON.stringify(args),/fake-/);
