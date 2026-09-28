@@ -8,12 +8,12 @@ export function claudeWindows(data) {
         return [{ usedPercent: w.utilization, windowDurationMins: minutes, resetsAt: Number.isFinite(reset) ? reset / 1000 : null }];
     });
 }
-// simon: per-model weekly buckets (seven_day_opus, seven_day_fable, ...) Claude reports alongside the totals.
+// simon: per-model weekly limits (e.g. Fable) Claude reports in `limits` as weekly_scoped entries.
 export function claudeModels(data) {
-    return Object.entries(data || {}).flatMap(([key, w]) => {
-        const m = /^seven_day_([a-z0-9]+)$/.exec(key);
-        if (!m || ['oauth_apps', 'cowork'].includes(m[1]) || typeof w?.utilization !== 'number' || !Number.isFinite(w.utilization)) return [];
-        return [{ name: m[1][0].toUpperCase() + m[1].slice(1), usedPercent: Math.max(0, Math.min(100, w.utilization)) }];
+    return (Array.isArray(data?.limits) ? data.limits : []).flatMap(l => {
+        const name = l?.scope?.model?.display_name;
+        if (l?.kind !== 'weekly_scoped' || typeof name !== 'string' || !name || typeof l.percent !== 'number' || !Number.isFinite(l.percent)) return [];
+        return [{ name, usedPercent: Math.max(0, Math.min(100, l.percent)) }];
     });
 }
 export function codexWindows(data) {
