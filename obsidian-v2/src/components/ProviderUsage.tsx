@@ -22,7 +22,7 @@ export function ProviderUsage({provider}:{provider:Provider}){
  const name=provider==='codex'?'Codex':'Claude';
  const weekly=usage?.windows.find(w=>w.windowDurationMins===10080);
  // simon: click the gauge to cycle Weekly → 5h → per-model (e.g. Fable).
- const five=usage?.windows.find(w=>w.windowDurationMins===300),views=[{name:'Weekly',usedPercent:weekly?.usedPercent},...(five?[{name:'5h',usedPercent:five.usedPercent}]:[]),...(usage?.models||[])],shown=views[view%views.length];
+ const five=usage?.windows.find(w=>w.windowDurationMins===300),views=[{name:'Weekly',usedPercent:weekly?.usedPercent},...(five?[{name:'5h',usedPercent:five.usedPercent}]:[]),...(usage?.models||[])],shown=views[view%views.length]!;
  const pct=shown.usedPercent;
  const issue=usage&&usage.status!=='ok'?usage.message:undefined;
  return <section className="weekly-gauge aos-v2-cc-tokenburn" data-provider={provider} onClick={()=>setView(v=>v+1)} style={{cursor:views.length>1?"pointer":undefined}} aria-label={name+' weekly usage'} title={usage?.status!=='ok'?usage?.message:undefined}>
