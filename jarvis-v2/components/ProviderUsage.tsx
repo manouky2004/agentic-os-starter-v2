@@ -27,5 +27,6 @@ export default function ProviderUsage({provider}:{provider:'codex'|'claude'}){
       {pct!==undefined&&pct>0&&<div className="weekly-gauge-endpoint" style={{left:Math.min(100,pct)+'%'}}><span className="weekly-gauge-endpoint-pulse"/><span className="weekly-gauge-endpoint-core"/></div>}
     </div>
     <div className="weekly-gauge-ruler" aria-hidden="true"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
+    {(()=>{const five=usage?.windows.find(w=>w.windowDurationMins===300),rows=[...(five?[{name:'5h',usedPercent:five.usedPercent}]:[]),...(usage?.models||[])];return rows.length?<div className="weekly-gauge-ruler" aria-label="Other usage">{rows.map(r=><span key={r.name}>{r.name} {Math.round(r.usedPercent)}%</span>)}</div>:null})()}
   </section>;
 }

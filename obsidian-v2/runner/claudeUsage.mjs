@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
-import { claudeWindows } from '../shared/usage.mjs';
+import { claudeWindows, claudeModels } from '../shared/usage.mjs';
 import { renewClaudeSignIn } from './claude-signin.mjs';
 // Same internal account endpoint used by the installed Claude Code /usage command.
 // Credentials stay on this loopback server. Never refresh/write Claude's credentials,
@@ -54,12 +54,12 @@ function sharedRead(auth, renewalMessage) {
             else {
                 if (!response.ok)
                     throw new Error(response.status === 429 ? 'Claude usage is temporarily rate limited. Retrying after the cache interval.' : 'Claude account usage could not be refreshed.');
-                const windows = claudeWindows(await response.json());
-                result = { status: windows.length ? 'ok' : 'unavailable', checkedAt: new Date().toISOString(), windows, ...(!windows.length ? { message: 'Claude did not report subscription quota windows for this account.' } : {}) };
+                const data = await response.json(), windows = claudeWindows(data);
+                result = { status: windows.length ? 'ok' : 'unavailable', checkedAt: new Date().toISOString(), windows, models: claudeModels(data), ...(!windows.length ? { message: 'Claude did not report subscription quota windows for this account.' } : {}) };
             }
         }
         catch {
-            result = { status: previous?.windows.length ? 'stale' : 'unavailable', checkedAt: previous?.checkedAt || null, windows: previous?.windows || [], message: 'Claude account usage could not be refreshed. Retrying in two minutes.' };
+            result = { status: previous?.windows.length ? 'stale' : 'unavailable', checkedAt: previous?.checkedAt || null, windows: previous?.windows || [], models: previous?.models, message: 'Claude account usage could not be refreshed. Retrying in two minutes.' };
         }
         if (identity === key) {
             cached = result;

@@ -37,5 +37,6 @@ export function ProviderUsage({provider}:{provider:Provider}){
     <div className="aos-v2-cc-tokenburn-scale" aria-hidden="true"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
    </div>
   </div>
+  {(()=>{const five=usage?.windows.find(w=>w.windowDurationMins===300),rows=[...(five?[{name:'5h',usedPercent:five.usedPercent}]:[]),...(usage?.models||[])];return rows.length?<div className="aos-v2-cc-tokenburn-scale" aria-label="Other usage">{rows.map(r=><span key={r.name}>{r.name} {Math.round(r.usedPercent)}%</span>)}</div>:null})()}
  </section>;
 }
