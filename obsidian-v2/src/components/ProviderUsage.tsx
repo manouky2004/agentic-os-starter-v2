@@ -15,16 +15,19 @@ function usageStore(provider:Provider){
 }
 export function ProviderUsage({provider}:{provider:Provider}){
  const store=usageStore(provider);
+ const [view,setView]=useState(0);
  const [reading,setReading]=useState<{provider:Provider;usage:CodexUsage|null}>({provider,usage:store.getSnapshot()});
  useEffect(()=>store.subscribe((usage:CodexUsage|null)=>setReading({provider,usage})),[store,provider]);
  const usage=reading.provider===provider?reading.usage:store.getSnapshot() as CodexUsage|null;
  const name=provider==='codex'?'Codex':'Claude';
  const weekly=usage?.windows.find(w=>w.windowDurationMins===10080);
- const pct=weekly?.usedPercent;
+ // simon: click the gauge to cycle Weekly → 5h → per-model (e.g. Fable).
+ const five=usage?.windows.find(w=>w.windowDurationMins===300),views=[{name:'Weekly',usedPercent:weekly?.usedPercent},...(five?[{name:'5h',usedPercent:five.usedPercent}]:[]),...(usage?.models||[])],shown=views[view%views.length];
+ const pct=shown.usedPercent;
  const issue=usage&&usage.status!=='ok'?usage.message:undefined;
- return <section className="weekly-gauge aos-v2-cc-tokenburn" data-provider={provider} aria-label={name+' weekly usage'} title={usage?.status!=='ok'?usage?.message:undefined}>
+ return <section className="weekly-gauge aos-v2-cc-tokenburn" data-provider={provider} onClick={()=>setView(v=>v+1)} style={{cursor:views.length>1?"pointer":undefined}} aria-label={name+' weekly usage'} title={usage?.status!=='ok'?usage?.message:undefined}>
   {['tl','tr','bl','br'].map(corner=><span key={corner} aria-hidden="true" className={'aos-v2-cc-tokenburn-corner aos-v2-cc-tokenburn-corner--'+corner}/>)}
-  <header className="aos-v2-cc-tokenburn-head"><span className="aos-v2-cc-tokenburn-title">{name} · Weekly usage</span>{usage?.notice&&<small className="aos-v2-usage-login" data-level={usage.notice.level} tabIndex={0} title={usage.notice.text} aria-label={usage.notice.text}>{usage.notice.level==='expired'?'Log in':'Login soon'}</small>}{usage?.status==='stale'&&<small tabIndex={0} title={issue} aria-label={'Last known. '+issue}>Last known</small>}</header>
+  <header className="aos-v2-cc-tokenburn-head"><span className="aos-v2-cc-tokenburn-title">{name} · {shown.name} usage</span>{usage?.notice&&<small className="aos-v2-usage-login" data-level={usage.notice.level} tabIndex={0} title={usage.notice.text} aria-label={usage.notice.text}>{usage.notice.level==='expired'?'Log in':'Login soon'}</small>}{usage?.status==='stale'&&<small tabIndex={0} title={issue} aria-label={'Last known. '+issue}>Last known</small>}</header>
   <div className="aos-v2-cc-tokenburn-meter">
    <div className="aos-v2-cc-tokenburn-pct"><span className="aos-v2-cc-tokenburn-pct-num">{pct===undefined?'—':Math.round(pct)}</span><span tabIndex={pct===undefined&&issue?0:undefined} title={pct===undefined?issue:undefined} aria-label={pct===undefined&&issue?'Unavailable. '+issue:undefined} className={'aos-v2-cc-tokenburn-pct-unit'+(pct===undefined?' weekly-gauge-unavailable':'')}>{pct===undefined?(!usage?'Loading':'Unavailable'):'%'}</span></div>
    <div className="aos-v2-cc-tokenburn-bar-wrap">
@@ -37,6 +40,5 @@ export function ProviderUsage({provider}:{provider:Provider}){
     <div className="aos-v2-cc-tokenburn-scale" aria-hidden="true"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
    </div>
   </div>
-  {(()=>{const five=usage?.windows.find(w=>w.windowDurationMins===300),rows=[...(five?[{name:'5h',usedPercent:five.usedPercent}]:[]),...(usage?.models||[])];return rows.length?<div className="aos-v2-cc-tokenburn-scale" aria-label="Other usage">{rows.map(r=><span key={r.name}>{r.name} {Math.round(r.usedPercent)}%</span>)}</div>:null})()}
  </section>;
 }

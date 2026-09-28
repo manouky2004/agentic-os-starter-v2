@@ -7,6 +7,7 @@ type CodexUsage=Reading&{notice?:{level:'soon'|'expired';text:string}};
 
 export default function ProviderUsage({provider}:{provider:'codex'|'claude'}){
   const [readings,setReadings]=useState<Partial<Record<'codex'|'claude',CodexUsage>>>({});
+  const [view,setView]=useState(0);
   const usage=readings[provider],name=provider==='claude'?'Claude':'Codex';
   useEffect(()=>{
     let gone=false,busy=false;const controller=new AbortController();
@@ -14,11 +15,13 @@ export default function ProviderUsage({provider}:{provider:'codex'|'claude'}){
     void pull();const timer=setInterval(()=>void pull(),60000);document.addEventListener('visibilitychange',pull);return()=>{gone=true;controller.abort();clearInterval(timer);document.removeEventListener('visibilitychange',pull)};
   },[provider]);
   const weekly=usage?.windows.find(w=>w.windowDurationMins===10080);
-  const pct=weekly?.usedPercent;
+  // simon: click the gauge to cycle Weekly → 5h → per-model (e.g. Fable).
+  const five=usage?.windows.find(w=>w.windowDurationMins===300),views=[{name:'Weekly',usedPercent:weekly?.usedPercent},...(five?[{name:'5h',usedPercent:five.usedPercent}]:[]),...(usage?.models||[])],shown=views[view%views.length];
+  const pct=shown.usedPercent;
   const issue=usage&&usage.status!=='ok'?usage.message:undefined;
-  return <section className="weekly-gauge" data-provider={provider} aria-label={name+' weekly usage'}>
+  return <section className="weekly-gauge" data-provider={provider} onClick={()=>setView(v=>v+1)} style={{cursor:views.length>1?"pointer":undefined}} aria-label={name+' weekly usage'}>
     {['tl','tr','bl','br'].map(corner=><span key={corner} aria-hidden="true" className={'weekly-gauge-corner weekly-gauge-corner--'+corner}/>)}
-    <header><span>{name} · Weekly usage</span>{usage?.notice&&<small className="weekly-gauge-login" data-level={usage.notice.level} tabIndex={0} title={usage.notice.text} aria-label={usage.notice.text}>{usage.notice.level==='expired'?'Log in':'Login soon'}</small>}{usage?.status==='stale'&&<small tabIndex={0} title={issue} aria-label={'Last known. '+issue}>Last known</small>}</header>
+    <header><span>{name} · {shown.name} usage</span>{usage?.notice&&<small className="weekly-gauge-login" data-level={usage.notice.level} tabIndex={0} title={usage.notice.text} aria-label={usage.notice.text}>{usage.notice.level==='expired'?'Log in':'Login soon'}</small>}{usage?.status==='stale'&&<small tabIndex={0} title={issue} aria-label={'Last known. '+issue}>Last known</small>}</header>
     <div className="weekly-gauge-number">{pct===undefined?'—':Math.round(pct)}<small tabIndex={pct===undefined&&issue?0:undefined} title={pct===undefined?issue:undefined} aria-label={pct===undefined&&issue?'Unavailable. '+issue:undefined}>{pct===undefined?(!usage?'Loading':'Unavailable'):'% used'}</small></div>
     <div className="weekly-gauge-bar" role="progressbar" aria-label={name+' weekly usage'} aria-valuenow={pct} aria-valuetext={pct===undefined?(!usage?'Loading':'Unavailable'):Math.round(pct)+'% used'} aria-valuemin={0} aria-valuemax={100}>
       <div className="weekly-gauge-track"/>
@@ -27,6 +30,5 @@ export default function ProviderUsage({provider}:{provider:'codex'|'claude'}){
       {pct!==undefined&&pct>0&&<div className="weekly-gauge-endpoint" style={{left:Math.min(100,pct)+'%'}}><span className="weekly-gauge-endpoint-pulse"/><span className="weekly-gauge-endpoint-core"/></div>}
     </div>
     <div className="weekly-gauge-ruler" aria-hidden="true"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
-    {(()=>{const five=usage?.windows.find(w=>w.windowDurationMins===300),rows=[...(five?[{name:'5h',usedPercent:five.usedPercent}]:[]),...(usage?.models||[])];return rows.length?<div className="weekly-gauge-ruler" aria-label="Other usage">{rows.map(r=><span key={r.name}>{r.name} {Math.round(r.usedPercent)}%</span>)}</div>:null})()}
   </section>;
 }
